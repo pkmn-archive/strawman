@@ -53,6 +53,18 @@
 type ID = '' | string & {__isID: true};
 toID(s: string): ID;
 
+// TODO: apply
+type primitive = string | number | boolean | undefined | null;
+type DeepReadonly<T> = T extends primitive ? T : DeepReadonlyObject<T>;
+type DeepReadonlyObject<T> = {
+  readonly [P in keyof T]: DeepReadonly<T[P]>
+}
+
+// TODO: should this be DeepNullable? Currently named for approx symmetry with NonNullable type.
+type Nullable<T> = {
+  [P in keyof T]: Nullable<T[P]> | null;
+}
+
 type Generation = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 // NOTE: CAP is not currently considered a mod but should be...
 type Mod = 'LGPE' | 'Stadium' | 'CAP' | 'SSB' | 'Next' | 'PiC' | 'Mix And Mega' | 'VGC 17';
@@ -91,7 +103,7 @@ type NatureName = 'Adamant' | 'Bashful' | 'Bold' | 'Brave' | 'Calm' | 'Careful' 
 
 class Natures {
   getByID(id: ID): Nature | undefined;
-  next(): {value: Nature, done: boolean};
+  [Symbol.iterator](): IterableIterator<Nature>;
 }
 
 interface Nature {
@@ -117,7 +129,7 @@ interface Ability extends Data & CommonAbility {
 
 class Abilities {
   getByID(id: ID): Ability | undefined;
-  next(): {value: Ability, done: boolean};
+  [Symbol.iterator](): IterableIterator<Ability>;
 }
 
 // items.ts
@@ -140,7 +152,7 @@ interface CommonItem<SpeciesT, TypeT, MoveT> {
   status?: StatusName;
   weather?: WeatherName;
   zMove?: {
-    type?: TypeT;
+    type: TypeT;
   } | {
     move: MoveT;
     from: MoveT;
@@ -157,7 +169,7 @@ interface Item extends Data & CommonItem<Species, Type, Move> {
 
 class Items {
   getByID(id: ID): Item | undefined;
-  next(): {value: Item, done: boolean};
+  [Symbol.iterator](): IterableIterator<Item>;
 }
 
 // moves.ts
@@ -215,7 +227,7 @@ interface SecondaryEffect {
 type ContestType = 'Cool' | 'Beautiful' | 'Cute' | 'Clever' | 'Tough';
 
 interface CommonMove<TypeT, ItemT, MoveT> {
-  accuracy: number | true;
+  accuracy: number | 'bypass';
   basePower: number;
   flags: MoveFlags;
   pp: number;
@@ -224,25 +236,18 @@ interface CommonMove<TypeT, ItemT, MoveT> {
 
   alwaysCrit?: boolean;
   alwaysHit?: boolean;
-  basePowerModifier?: number;
-  boosts?: Partial<BoostsTable> | false
+  boosts?: Partial<BoostsTable>;
   bypassesProtect?: boolean;
   category: MoveCategory;
   contestType?: ContestType;
-  critModifier?: number;
-  critRatio?: number;
+  critRatio?: number | 'always';
   damage?: number | 'level';
   defensiveCategory?: MoveCategory;
-  drain?: [number, number]; // fraction
-  forceSTAB?: boolean;
+  drain?: number; // fraction
   forceSwitch?: boolean;
   givesHealth?: boolean;
-  hasCustomRecoil?: boolean;
-  hasPriority?: boolean;
-  hasSecondaryEffect?: boolean;
-  heal?: [number, number]; // fraction
+  heal?: number; // fraction
   ignoreAbility?: boolean;
-  ignoreAccuracy?: boolean;
   ignoreDefensive?: boolean;
   ignoreEvasion?: boolean;
   ignoreImmunity?: boolean | TypeT;
@@ -257,20 +262,19 @@ interface CommonMove<TypeT, ItemT, MoveT> {
   isSpread?: boolean | 'allAdjacent';
   isZ?: ItemT;
   multiaccuracy?: boolean;
-  multihit?: number | [number, number]; // range
+  multihit?: [number, number]; // range
   noCopy?: boolean;
   noDamageVariance?: boolean;
   noFaint?: boolean;
   noMetronome?: MoveT[];
   noPPBoosts?: boolean;
   noSketch?: boolean;
-  nonGhostTarget?: string;
   ohko?: true | 'Ice'; // TODO: better type here?
   percentHealed?: number;
   pressureTarget?: string;
   priority?: number;
   pseudoWeather?: string:
-  recoil?: [number, number]; // fraction
+  recoil?: number | 'custom'; // fraction
   secondaries?: SecondaryEffect[];
   self?: SelfEffect;
   selfBoost?: {boosts?: Partial<BoostsTable>};
@@ -279,8 +283,6 @@ interface CommonMove<TypeT, ItemT, MoveT> {
   sideCondition?: ID;
   sleepUsable?: boolean;
   slotCondition?: string;
-  spreadHit: boolean;
-  spreadModifier?: number;
   stallingMove?: boolean;
   status?: StatusName;
   stealsBoosts?: boolean;
@@ -291,7 +293,6 @@ interface CommonMove<TypeT, ItemT, MoveT> {
   usesHighestAttackStat?: boolean;
   volatileStatus?: ID;
   weather?: WeatherName;
-  willCrit?: boolean;
   zMove?: {
     boosts?: Partial<BoostsTable>;
     effect?: ID;
@@ -310,7 +311,7 @@ interface Move extends Data & CommonMove<Type, Item, Move> {
 
 class Moves {
   getByID(id: ID): Move | undefined;
-  next(): {value: Move, done: boolean};
+  [Symbol.iterator](): IterableIterator<Move>;
 }
 
 // species.ts
@@ -365,7 +366,7 @@ interface Species extends Data & CommonSpecies<Ability, Item, Move, Species, Typ
 class Species {
   getName(name: string): string;
   getByID(id: ID): Species | undefined;
-  next(): {value: Species, done: boolean};
+  [Symbol.iterator](): IterableIterator<Species>;
 }
 
 // species-details.ts
@@ -515,7 +516,7 @@ interface Type extends CommonType {
 class Types {
   getByID(id: ID): Type | undefined;
   hiddenPower(pivs: Partial<StatsTable>): {type: Type, basePower: number} | undefined;
-  next(): {value: Type, done: boolean};
+  [Symbol.iterator](): IterableIterator<Type>;
 }
 
 // dex.ts
