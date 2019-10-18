@@ -35,39 +35,23 @@
 //      fields which are never read.
 //    - Map will need to be polyfilled or support for browsers before IE11 will need to
 //      be dropped.
-//
-//  *** TODO ***:
-//
-//   - 'Species'/'SpeciesDetails' names are problematic as they are plural
-//   - Demonstrate how PS can wrap the specific types and still extend them in OMs
-//   - All the fields in the JSON should be able to be `null` as a sentinel for removal,
-//     can implement this generically using higher order Typescript utility type
-//     functionality.
-//   - 'CommonFoo' and 'JSONFoo' naming could use bikeshedding!
-//   - Review fields to ensure optional fields are made required in the rich APIs where
-//     it makes sense to do so.
-//
 
-// core.ts
+// ---------- core.ts ----------
 
 type ID = '' | string & {__isID: true};
 toID(s: string): ID;
 
-// TODO: apply
 type primitive = string | number | boolean | undefined | null;
 type DeepReadonly<T> = T extends primitive ? T : DeepReadonlyObject<T>;
 type DeepReadonlyObject<T> = {
   readonly [P in keyof T]: DeepReadonly<T[P]>
 }
 
-// TODO: should this be DeepNullable? Currently named for approx symmetry with NonNullable type.
 type Nullable<T> = {
   [P in keyof T]: Nullable<T[P]> | null;
 }
 
-type Generation = 1 | 2 | 3 | 4 | 5 | 6 | 7;
-// NOTE: CAP is not currently considered a mod but should be...
-type Mod = 'LGPE' | 'Stadium' | 'CAP' | 'SSB' | 'Next' | 'PiC' | 'Mix And Mega' | 'VGC 17';
+// ---------- conditions.ts ----------
 
 type WeatherName =
   | 'Sand'
@@ -78,14 +62,22 @@ type WeatherName =
   | 'Heavy Rain'
   | 'Strong Winds';
 
-type StatusName = 'par' | 'psn' | 'frz' | 'slp' | 'brn' | 'tox';
+type Terrain =
+  | 'Psychic'
+  | 'Misty'
+  | 'Electric'
+  | 'Grassy';
 
-// data.ts
+// TODO: volatiles/slot/side condition enums?
+
+type StatusName = 'PAR' | 'PSN' | 'FRZ' | 'SLP' | 'BRN' | 'TOX';
+
+// ---------- data.ts ----------
 
 type DataKind = 'Ability' | 'Move' | 'Item' | 'Species';
 type Nonstandard = 'Glitch' | 'Past' | 'Future' | 'CAP' | 'LGPE' | 'Pokestar' | 'Custom';
 
-interface JSONData extends Omit<Data, 'id' | 'kind' | 'num' | 'gen'> {}
+interface JSONData extends Nullable<Omit<Data, 'id' | 'kind' | 'num' | 'gen'>> {}
 interface Data {
   id: ID;
   kind: DataKind;
@@ -95,47 +87,54 @@ interface Data {
   isNonstandard?: Nonstandard;
 }
 
-// natures.ts
+// ---------- natures.ts ----------
 
 type NatureName = 'Adamant' | 'Bashful' | 'Bold' | 'Brave' | 'Calm' | 'Careful' | 'Docile' | 'Gentle' |
   'Hardy' | 'Hasty' | 'Impish' | 'Jolly' | 'Lax' | 'Lonely' | 'Mild' | 'Modest' | 'Naive' | 'Naughty' |
   'Quiet' | 'Quirky' | 'Rash' | 'Relaxed' | 'Sassy' | 'Serious' | 'Timid';
 
-class Natures {
-  getByID(id: ID): Nature | undefined;
-  [Symbol.iterator](): IterableIterator<Nature>;
-}
-
-interface Nature {
+interface Nature extends DeepReadonly<{
   id: ID;
   name: NatureName;
   plus?: StatName;
   minus?: StatName;
+
+  toJSON(): JSONNature;
+}> {}
+interface JSONNature = extends Nullable<Omit<Nature, 'id'>> {};
+
+interface Natures {
+  get(id: ID): Nature | undefined;
+  [Symbol.iterator](): IterableIterator<Nature>;
 }
 
-// abilities.ts
+// ---------- abilities.ts ----------
 
 interface CommonAbility {
   suppressesWeather?: boolean;
   isUnsuppressible?: boolean;
 }
 
-interface JSONAbility extends JSONData & CommonAbility {}
-interface Ability extends Data & CommonAbility {
+interface JSONAbility extends Nullable<JSONData & CommonAbility> {}
+interface Ability extends DeepReadonly<Data & CommonAbility & {
   kind: 'Ability';
 
   toJSON(): JSONAbility;
-}
+}> {}
 
-class Abilities {
-  getByID(id: ID): Ability | undefined;
+interface Abilities {
+  get(id: ID): Ability | undefined;
   [Symbol.iterator](): IterableIterator<Ability>;
 }
 
-// items.ts
+// ---------- items.ts ----------
 
-interface CommonItem<SpeciesT, TypeT, MoveT> {
-  fling?: { basePower: number status?: string volatileStatus?: string };
+interface CommonItem<MoveT, SpeciesT, TypeT> {
+  fling?: {
+    basePower: number;
+    status?: StatusName;
+    volatileStatus?: ID;
+  };
   forcedForme?: SpeciesT;
   ignoreKlutz?: boolean;
   infiltrates?: boolean;
@@ -145,7 +144,10 @@ interface CommonItem<SpeciesT, TypeT, MoveT> {
   isPokeball?: boolean;
   megaEvolves?: SpeciesT;
   megaStone?: SpeciesT;
-  naturalGift?: {basePower: number, type: TypeT};
+  naturalGift?: {
+    basePower: number;
+    type: TypeT;
+  };
   onDrive?: TypeT;
   onMemory?: TypeT;
   onPlate?: TypeT;
@@ -160,21 +162,20 @@ interface CommonItem<SpeciesT, TypeT, MoveT> {
   };
 }
 
-interface JSONItem extends JSONData && CommonItem<ID, ID, ID> {}
-interface Item extends Data & CommonItem<Species, Type, Move> {
+interface JSONItem extends Nullable<JSONData & CommonItem<ID, ID, ID>> {}
+interface Item extends DeepReadonly<Data & CommonItem<Move, Species, Type> & {
   kind: 'Item';
 
   toJSON(): JSONItem;
-}
+}> {}
 
-class Items {
-  getByID(id: ID): Item | undefined;
+interface Item {
+  get(id: ID): Item | undefined;
   [Symbol.iterator](): IterableIterator<Item>;
 }
 
-// moves.ts
+// ---------- moves.ts ----------
 
-// TODO: consider moving some top-level booleans from Move into MoveFlags
 interface MoveFlags {
   authentic?: boolean; // Ignores a target's substitute.
   bite?: boolean; // Power is multiplied by 1.5 when used by a Pokemon with the Ability Strong Jaw.
@@ -203,31 +204,31 @@ type MoveCategory: 'Physical' | 'Special' | 'Status';
 
 type MoveTarget =
   // single-target
-  'normal'|'any'|'adjacentAlly'|'adjacentFoe'|'adjacentAllyOrSelf'|
+  'Normal' | 'Any' | 'AdjacentAlly' | 'AdjacentFoe' | 'AdjacentAllyOrSelf' |
   // single-target, automatic
-  'self'|'randomNormal'|
+  'Self' | 'RandomNormal' |
   // spread
-  'allAdjacent'|'allAdjacentFoes'|
+  'AllAdjacent' | 'AllAdjacentFoes' |
   // side and field
-  'allySide'|'foeSide'|'all';
+  'AllySide' | 'FoeSide' | 'All';
 
-interface SelfEffect {
+interface SelfEffect extends DeepReadonly<{
   volatileStatus?: ID;
   boosts?: Partial<BoostsTable>;
-}
+}> {}
 
-interface SecondaryEffect {
+interface SecondaryEffect extends DeepReadonly<{
   chance?: number;
   boosts?: Partial<BoostsTable>;
   self?: SelfEffect;
   status?: StatusName;
   volatileStatus?: ID;
-}
+}> {}
 
 type ContestType = 'Cool' | 'Beautiful' | 'Cute' | 'Clever' | 'Tough';
 
-interface CommonMove<TypeT, ItemT, MoveT> {
-  accuracy: number | 'bypass';
+interface CommonMove<ItemT, MoveT, TypeT> extends DeepReadonly<{
+  accuracy: number | 'Bypass';
   basePower: number;
   flags: MoveFlags;
   pp: number;
@@ -240,8 +241,8 @@ interface CommonMove<TypeT, ItemT, MoveT> {
   bypassesProtect?: boolean;
   category: MoveCategory;
   contestType?: ContestType;
-  critRatio?: number | 'always';
-  damage?: number | 'level';
+  critRatio?: number | 'Always';
+  damage?: number | 'Level';
   defensiveCategory?: MoveCategory;
   drain?: number; // fraction
   forceSwitch?: boolean;
@@ -259,7 +260,7 @@ interface CommonMove<TypeT, ItemT, MoveT> {
   ignoresDefenseBoosts?: boolean;
   infiltrates?: boolean;
   isFutureMove?: boolean;
-  isSpread?: boolean | 'allAdjacent';
+  isSpread?: boolean | 'AllAdjacent';
   isZ?: ItemT;
   multiaccuracy?: boolean;
   multihit?: [number, number]; // range
@@ -274,12 +275,12 @@ interface CommonMove<TypeT, ItemT, MoveT> {
   pressureTarget?: string;
   priority?: number;
   pseudoWeather?: string:
-  recoil?: number | 'custom'; // fraction
+  recoil?: number | 'Custom'; // fraction
   secondaries?: SecondaryEffect[];
   self?: SelfEffect;
   selfBoost?: {boosts?: Partial<BoostsTable>};
   selfSwitch?: ID | boolean;
-  selfdestruct?: 'always' | 'ifHit';
+  selfdestruct?: 'Always' | 'IfHit';
   sideCondition?: ID;
   sleepUsable?: boolean;
   slotCondition?: string;
@@ -298,29 +299,35 @@ interface CommonMove<TypeT, ItemT, MoveT> {
     effect?: ID;
     power?: number;
   }
-}
+}> {}
 
-interface JSONMove extends Data & CommonMove<ID, ID, ID> {}
-interface Move extends Data & CommonMove<Type, Item, Move> {
+interface JSONMove extends Nullable<Data & CommonMove<ID, ID, ID>> {}
+interface Move extends DeepReadonly<Data & CommonMove<Item, Move, Type> & {
   kind: 'Move';
+
   noMetronome: Move[];
   secondaries: SecondaryEffect[];
 
   toJSON(): JSONMove;
-}
+}> {}
 
-class Moves {
-  getByID(id: ID): Move | undefined;
+interface Moves {
+  get(id: ID): Move | undefined;
   [Symbol.iterator](): IterableIterator<Move>;
 }
 
-// species.ts
+// ---------- species.ts ----------
 
 type GenderName = 'M' | 'F' | 'N';
 type UsageTierName = 'OU' | 'UU' | 'RU' | 'NU' | 'PU';
 type TierName = UsageTierName | 'Uber' | 'UUBL' | 'RUBL' | 'NUBL' | 'PUBL';
 
-interface CommonSpeciesAbilities<AbilityT> = {0: AbilitT, 1?: AbilityT, H?: AbilityT, S?: AbilityT};
+interface SpeciesAbilities<AbilityT> extends DeepReadonly<{
+  0: AbilityT;
+  1?: AbilityT;
+  H?: AbilityT;
+  S?: AbilityT;
+}> {};
 
 interface CommonSpecies<AbilityT, ItemT, MoveT, SpeciesT, TypeT> {
   num: number;
@@ -352,32 +359,33 @@ interface CommonSpecies<AbilityT, ItemT, MoveT, SpeciesT, TypeT> {
   weightkg: number;
 }
 
-interface JSONSpecies extends JSONData & CommonSpecies<ID, ID, ID, ID, ID> {}
-interface Species extends Data & CommonSpecies<Ability, Item, Move, Species, Type> {
+interface JSONSpecies extends Nullable<JSONData & CommonSpecies<ID, ID, ID, ID, ID>> {}
+interface Species extends DeepReadonly<Data & CommonSpecies<Ability, Item, Move, Species, Type> & {
   type 'Species';
+
   cosmeticForms: Species[];
   otherFormes: Speces[];
   requiredItems: Item[];
 
   toJSON(): JSONSpecies;
-}
+}> {}
 
-// TODO: name collision :(
-class Species {
+interface SpeciesSummaries {
   getName(name: string): string;
-  getByID(id: ID): Species | undefined;
+  get(id: ID): Species | undefined;
   [Symbol.iterator](): IterableIterator<Species>;
 }
 
-// species-details.ts
+// ---------- species-details.ts ----------
 
 // TODO: create EggGroup and Color enum types?
-type EvoType = 'trade' | 'stone' | 'levelMove' | 'levelExtra' | 'levelFriendship' | 'levelHold';
 
-interface CommonEventInfo<NatureT, AbilityT, MoveT> {
+type EvoType = 'Trade' | 'Stone' | 'LevelMove' | 'LevelExtra' | 'LevelFriendship' | 'LevelHold';
+
+interface CommonEventInfo<AbilityT, MoveT, NatureT> {
   generation: Generation;
   level?: number;
-  shiny?: 'always' | 'never' | 'possible';
+  shiny?: 'Always' | 'Never' | 'Possible';
   gender?: GenderName;
   nature?: NatureName;
   ivs?: Partial<StatsTable>;
@@ -390,8 +398,8 @@ interface CommonEventInfo<NatureT, AbilityT, MoveT> {
   from?: string;
 }
 
-interface JSONEventInfo extends CommonEventInfo<NatureName, ID, ID> {}
-interface EventInfo extends CommonEventInfo<NatureName, Ability, Move> {}
+interface JSONEventInfo extends Nullable<CommonEventInfo<ID, ID, NatureName>> {}
+interface EventInfo extends DeepReadonly<CommonEventInfo<Ability, Move, Nature>> {}
 
 type MoveSource = string;
 
@@ -414,34 +422,40 @@ interface CommonSpeciesDetails<EventInfoT, ItemT, MoveT> {
   learnset: Map<ID, MoveSource[]>;
 }
 
-interface JSONSpeciesDetails extends CommonSpeciesDetails<JSONEventInfo, ID, ID> {}
-interface SpeciesDetails extends CommonSpeciesDetails<EventInfo, Item, Move> {
+interface JSONSpeciesDetails extends Nullable<CommonSpeciesDetails<JSONEventInfo, ID, ID>> {}
+interface SpeciesDetails extends DeepReadonly<CommonSpeciesDetails<EventInfo, Item, Move> & {
   eggGroups: string[]; // EggGroup
   encounters: EventInfoT[]
   eventPokemon: EventInfoT[];
 
   toJSON(): JSONSpeciesDetails;
-}
+}> {}
 
 // TODO: name collision :(
-class SpeciesDetails {
+interface SpeciesDetails {
   static forGen(gen: Generation, mod?: Mod): Promise<SpeciesDetails>;
 
-  getByID(id: ID): SpeciesDetails | undefined;
+  get(id: ID): SpeciesDetails | undefined;
 }
 
-// stats.ts
+// ---------- stats.ts ----------
 
 type StatName = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
 type StatsTable<T = number> = {[stat in StatName]: T};
 type BoostName = Exclude<StatName, 'hp'> | 'accuracy' | 'evasion';
 type BoostsTable<T = number> = {[boost in BoostName]: T};
 
-export class Stats {
-  static calc(stat: Stat, base: number, iv: number, ev: number, level: number, gen?: Generation);
-  static calc(stat: Stat, base: number, iv: number, ev: number, level: number, nature: Nature, gen?: Generation);
+interface Stats {
+  static calc(
+    stat: Stat,
+    base: number,
+    iv: number = 31,
+    ev: number = 252,
+    level: number = 100,
+    nature?: /* extends */ Nature,
+    gen?: GenerationNumber);
 
-  static getByID(id: ID): StatName | undefined;
+  static get(id: ID): StatName | undefined;
   static display(s: string, full: boolean = true): string;
 
   static fill(p: Partial<StatsTable<T>>, val: T): StatsTable<T>;
@@ -450,9 +464,9 @@ export class Stats {
   static getHPDV(pivs: Partial<StatsTable>): number;
 }
 
-// sets.ts
+// ---------- sets.ts ----------
 
-interface CommonPokemonSet<AbilityT, ItemT, MoveT, SpeciesT, NatureT, TypeT> {
+interface CommonPokemonSet<AbilityT, ItemT, MoveT, NatureT, SpeciesT, TypeT> {
   name?: string;
   species: SpeciesT;
   item?: ItemT;
@@ -469,32 +483,32 @@ interface CommonPokemonSet<AbilityT, ItemT, MoveT, SpeciesT, NatureT, TypeT> {
   pokeball?: ID;
 }
 
-interface JSONPokemonSet extends CommonPokemonSet<ID, ID, ID, ID, NatureName, TypeName> {}
-interface PokemonSet extends Required<CommonPokemonSet<Ability, Item, Move, Species, Nature, Type>> {
+interface JSONPokemonSet extends Nullable<CommonPokemonSet<ID, ID, ID, NatureName, ID, TypeName>> {}
+interface PokemonSet extends DeepReadonly<Required<CommonPokemonSet<Ability, Item, Move, Nature, Species, Type>> & {
   toJSON(): JSONPokemonSet;
-}
+}> {}
 
-class Sets {
+interface Sets {
   export(set: PokemonSet, compact: boolean = false): string;
   import(str: string): PokemonSet;
 }
 
-// teams.ts
+// ---------- teams.ts ----------
 
-class Teams {
+interface Teams {
   export(team: PokemonSet[], compact: boolean = false): string;
   exportAll(team: PokemonSet[][], compact: boolean = false): string;
   import(str: string): PokemonSet[];
   importAll(str: string): PokemonSet[][];
 }
 
-// types.ts
+// ---------- types.ts ----------
 
 type TypeName =
   'Normal' | 'Fighting' | 'Flying' | 'Poison' | 'Ground' | 'Rock' | 'Bug' | 'Ghost' | 'Steel' |
   'Fire' | 'Water' | 'Grass' | 'Electric' | 'Psychic' | 'Ice' | 'Dragon' | 'Dark' | 'Fairy' | '???';
 
-type TypeEffectiveness = 'normal' | 'weakness' | 'resistance' | 'immunity';
+type TypeEffectiveness = 'Normal' | 'Weakness' | 'Resistance' | 'Immunity';
 
 interface CommonType {
   name: TypeName;
@@ -503,50 +517,55 @@ interface CommonType {
   HPDVs: Partial<StatsTable>;
 }
 
-interface JSONType extends CommonType {
+interface JSONType extends Nullable<CommonType & {
   damageTaken: {[type: TypeName]: TypeEffectiveness};
-}
+}> {}
 
-interface Type extends CommonType {
+interface Type extends DeepReadonly<CommonType & {
   id: ID;
   gen: Generation;
   damageTaken: Map<Type, TypeEffectiveness>;
-}
+}> {}
 
-class Types {
-  getByID(id: ID): Type | undefined;
+interface Types {
+  get(id: ID): Type | undefined;
   hiddenPower(pivs: Partial<StatsTable>): {type: Type, basePower: number} | undefined;
   [Symbol.iterator](): IterableIterator<Type>;
 }
 
-// dex.ts
+// ---------- gen.ts ----------
 
-class Dex {
-  static forGen(gen: Generation, mod?: Mod): Promise<Dex>;
+type GenerationNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+// NOTE: CAP is not currently considered a mod but should be...
+type Mod = 'LGPE' | 'Stadium' | 'CAP' | 'SSB' | 'Next' | 'PiC' | 'Mix And Mega' | 'VGC 17';
 
-  gen: Generation;
+interface Generation extends DeepReadonly<{
+  num: GenerationNumber;
+  mod?: Mod;
 
   abilities: Abilities;
   items: Items;
   moves: Moves;
   natures: Natures;
   sets: Sets;
-  species: Species;
+  species: SpeciesSummaries;
   stats: Stats;
   teams: Teams;
   types: Types;
+}> {}
 
-  // NB: Descriptions and SpeciesDetails have their own APIs
+interface Generations {
+  static get(generation: GenerationNumber, mod?: Mod): Promise<Generation>;
 }
 
-// descriptions.ts
+// ---------- descriptions.ts ----------
 
 type Language =
   'de' | 'en' | 'es' | 'fr' | 'hi' | 'it' | 'ja'
   'nl' | 'pl' | 'pt' | 'ru' | 'tr' | 'tw' | 'zh';
 
-class Descriptions {
-  static forGen(gen: Generation, mod?: Mod, lang: Language = 'en'): Promise<Descriptions>;
+interface Descriptions {
+  static forGen(gen: Generation, lang: Language = 'en'): Promise<Descriptions>;
 
   full(data: Data): string;
   short(data: Data): string;
