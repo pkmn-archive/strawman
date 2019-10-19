@@ -39,7 +39,7 @@
 // ---------- core.ts ----------
 
 type ID = '' | string & {__isID: true};
-toID(s: string): ID;
+declare function toID(s: string): ID;
 
 type primitive = string | number | boolean | undefined | null;
 type DeepReadonly<T> = T extends primitive ? T : DeepReadonlyObject<T>;
@@ -101,7 +101,7 @@ interface Nature extends DeepReadonly<{
 
   toJSON(): JSONNature;
 }> {}
-interface JSONNature = extends Nullable<Omit<Nature, 'id'>> {};
+interface JSONNature extends Nullable<Omit<Nature, 'id'>> {};
 
 interface Natures {
   get(id: ID): Nature | undefined;
@@ -169,7 +169,7 @@ interface Item extends DeepReadonly<Data & CommonItem<Move, Species, Type> & {
   toJSON(): JSONItem;
 }> {}
 
-interface Item {
+interface Items {
   get(id: ID): Item | undefined;
   [Symbol.iterator](): IterableIterator<Item>;
 }
@@ -200,7 +200,7 @@ interface MoveFlags {
   sound?: boolean; // Has no effect on Pokemon with the Ability Soundproof.
 }
 
-type MoveCategory: 'Physical' | 'Special' | 'Status';
+type MoveCategory = 'Physical' | 'Special' | 'Status';
 
 type MoveTarget =
   // single-target
@@ -274,7 +274,7 @@ interface CommonMove<ItemT, MoveT, TypeT> extends DeepReadonly<{
   percentHealed?: number;
   pressureTarget?: string;
   priority?: number;
-  pseudoWeather?: string:
+  pseudoWeather?: string;
   recoil?: number | 'Custom'; // fraction
   secondaries?: SecondaryEffect[];
   self?: SelfEffect;
@@ -361,10 +361,10 @@ interface CommonSpecies<AbilityT, ItemT, MoveT, SpeciesT, TypeT> {
 
 interface JSONSpecies extends Nullable<JSONData & CommonSpecies<ID, ID, ID, ID, ID>> {}
 interface Species extends DeepReadonly<Data & CommonSpecies<Ability, Item, Move, Species, Type> & {
-  type 'Species';
+  type: 'Species';
 
   cosmeticForms: Species[];
-  otherFormes: Speces[];
+  otherFormes: Species[];
   requiredItems: Item[];
 
   toJSON(): JSONSpecies;
@@ -425,13 +425,13 @@ interface CommonSpeciesDetails<EventInfoT, ItemT, MoveT> {
 interface JSONSpeciesDetails extends Nullable<CommonSpeciesDetails<JSONEventInfo, ID, ID>> {}
 interface SpeciesDetails extends DeepReadonly<CommonSpeciesDetails<EventInfo, Item, Move> & {
   eggGroups: string[]; // EggGroup
-  encounters: EventInfoT[]
-  eventPokemon: EventInfoT[];
+  encounters: EventInfo[]
+  eventPokemon: EventInfo[];
 
   toJSON(): JSONSpeciesDetails;
 }> {}
 
-// TODO: name collision :(
+// FIXME: name collision :(
 interface SpeciesDetails {
   static forGen(gen: Generation, mod?: Mod): Promise<SpeciesDetails>;
 
@@ -445,20 +445,20 @@ type StatsTable<T = number> = {[stat in StatName]: T};
 type BoostName = Exclude<StatName, 'hp'> | 'accuracy' | 'evasion';
 type BoostsTable<T = number> = {[boost in BoostName]: T};
 
-interface Stats {
+class Stats {
   static calc(
-    stat: Stat,
+    stat: StatName,
     base: number,
-    iv: number = 31,
-    ev: number = 252,
-    level: number = 100,
-    nature?: /* extends */ Nature,
+    iv: number /* = 31 */, 
+    ev: number /* = 252 */,
+    level: number /* = 100 */,
+    nature?: Nature,
     gen?: GenerationNumber);
 
   static get(id: ID): StatName | undefined;
-  static display(s: string, full: boolean = true): string;
+  static display(s: string, full: boolean  /* = true */): string;
 
-  static fill(p: Partial<StatsTable<T>>, val: T): StatsTable<T>;
+  static fill<T>(p: Partial<StatsTable<T>>, val: T): StatsTable<T>;
   static itod(iv: number): number;
   static dtoi(dv: number): number;
   static getHPDV(pivs: Partial<StatsTable>): number;
@@ -489,15 +489,15 @@ interface PokemonSet extends DeepReadonly<Required<CommonPokemonSet<Ability, Ite
 }> {}
 
 interface Sets {
-  export(set: PokemonSet, compact: boolean = false): string;
+  export(set: PokemonSet, compact: boolean /* = false */): string;
   import(str: string): PokemonSet;
 }
 
 // ---------- teams.ts ----------
 
 interface Teams {
-  export(team: PokemonSet[], compact: boolean = false): string;
-  exportAll(team: PokemonSet[][], compact: boolean = false): string;
+  export(team: PokemonSet[], compact: boolean /* = false */): string;
+  exportAll(team: PokemonSet[][], compact: boolean /* = false */): string;
   import(str: string): PokemonSet[];
   importAll(str: string): PokemonSet[][];
 }
@@ -518,7 +518,7 @@ interface CommonType {
 }
 
 interface JSONType extends Nullable<CommonType & {
-  damageTaken: {[type: TypeName]: TypeEffectiveness};
+  damageTaken: {[type in TypeName]: TypeEffectiveness};
 }> {}
 
 interface Type extends DeepReadonly<CommonType & {
@@ -561,11 +561,11 @@ interface Generations {
 // ---------- descriptions.ts ----------
 
 type Language =
-  'de' | 'en' | 'es' | 'fr' | 'hi' | 'it' | 'ja'
+  'de' | 'en' | 'es' | 'fr' | 'hi' | 'it' | 'ja' |
   'nl' | 'pl' | 'pt' | 'ru' | 'tr' | 'tw' | 'zh';
 
 interface Descriptions {
-  static forGen(gen: Generation, lang: Language = 'en'): Promise<Descriptions>;
+  static forGen(gen: Generation, lang: Language /* = 'en' */): Promise<Descriptions>;
 
   full(data: Data): string;
   short(data: Data): string;
