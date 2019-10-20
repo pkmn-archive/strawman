@@ -107,24 +107,26 @@ class Items  {
   }
 }
 
-class DataImpl implements Data {
+abstract class DataImpl implements Data {
   gen: Generation;
-  kind: DataKind;
   name: string;
   id: ID;
 
-  constructor(gen: Generation, kind: DataKind, name: string) {
+  abstract kind: DataKind;
+
+  constructor(gen: Generation, name: string) {
     this.id = toID(name);
-    this.kind = kind;
     this.gen = gen;
   }
 }
 
 class ItemImpl extends DataImpl implements Item {
+  kind: 'Item';
+
   private readonly data: JSONItem;
 
   constructor(gen: Generation, data: JSONItem) {
-    super(gen, 'Item', data.name);
+    super(gen, data.name);
     this.data = data;
   }
 
@@ -167,16 +169,17 @@ class SpeciesSummaries {
 
   get(id: ID): Species | undefined {
     const data = this.json[id];
-    return data ? new SpeciesImpl(gen, data) : undefined;
+    return data ? new SpeciesImpl(this.gen, data) : undefined;
   }
 }
 
 class SpeciesImpl extends DataImpl implements Species {
+  kind: 'Species';
   num: number;
   data: JSONSpecies;
 
   constructor(gen: Generation, data: JSONSpecies) {
-    super(gen, 'Species', data.name);
+    super(gen, data.name);
     this.num = data.num;  
   }
 
