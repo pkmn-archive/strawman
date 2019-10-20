@@ -1,0 +1,22 @@
+{
+    "charmander": {
+        "num": 4,
+        "name": "Charmander",
+        "evos": ["charmeleon"],
+        "requiredMove": ["ember"]
+    },
+    "charmeleon": {
+        "num": 5,
+        "name": "Charmeleon",
+        "evos": ["charizard"],
+        "requiredItems": ["leftovers"]
+    },
+    "charizard": {
+        "num": 6,
+        "name": "Charizard"
+    },
+    "marshadow": {
+        "num": 999,
+        "name": "Marshadow"
+    }
+}

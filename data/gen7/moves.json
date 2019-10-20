@@ -1,0 +1,18 @@
+{
+    "ember": {
+        "name": "Ember",
+        "basePower": 40,
+        "pp": 20
+    },
+    "flamethrower": {
+        "name": "Flamethrower",
+        "basePower": 95,
+        "pp": 10
+    },
+    "metronome": {
+        "name": "Metronome",
+        "basePower": 0,
+        "pp": 10,
+		"noMetronome": ["ember"]
+	}
+}

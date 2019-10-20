@@ -1,0 +1,48 @@
+{
+    "items": {
+        "charizarditey": {
+            "desc": "Long description for charizarditey",
+            "shortDesc": "short desc 4 c-y"
+        },
+        "charizarditex": {
+            "desc": "Long description for charizarditex",
+            "shortDesc": "short desc 4 c-x"
+        },
+        "leftovers": {
+            "desc": "Long description for leftovers",
+            "shortDesc": "short desc 4 c-x"
+        }
+    },
+    "moves": {
+        "ember": {
+            "desc": "Long description for ember",
+            "shortDesc": "short desc 4 mbr"
+        },
+        "flamethrower": {
+            "desc": "Long description for flamethrower",
+            "shortDesc": "short desc 4 ft"
+        },
+        "metronome": {
+            "desc": "Long description for metronome",
+            "shortDesc": "short desc 4 metro"
+        }
+    },
+    "species": {
+        "charmander": {
+            "desc": "Long description for charmander",
+            "shortDesc": "short desc 4 char"
+        },
+        "charmeleon": {
+            "desc": "Long description for charmeleon",
+            "shortDesc": "short desc 4 meleon"
+        },
+        "charizard": {
+            "desc": "Long description for charizard",
+            "shortDesc": "short desc 4 zard"
+        },
+        "marshadow": {
+            "desc": "Long description for marshadow",
+            "shortDesc": "short desc 4 marsh"
+        }
+    }
+}

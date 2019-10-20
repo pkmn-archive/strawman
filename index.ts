@@ -26,11 +26,22 @@ type WeatherName =
 
 type DataKind = 'Ability' | 'Move' | 'Item' | 'Species';
 
-interface JSONData extends Nullable<Omit<Data, 'id' | 'kind' | 'num' | 'gen'>> {}
+
+interface Descriptions {
+  desc: string;
+  shortDesc: string;
+}
+interface JSONDescription extends Nullable<{
+  items?: {[id: string]: Descriptions};
+  moves?: {[id: string]: Descriptions};
+  species?: {[id: string]: Descriptions};
+}> {}
+
+interface JSONData extends Nullable<Omit<Data, 'id' | 'kind' | 'gen' | 'desc' | 'shortDesc'>> {}
 interface Data {
   id: ID;
   kind: DataKind;
-  name: string;
+  name: string; // TODO store as key 
   gen: Generation;
   desc: string;
   shortDesc: string;
@@ -40,7 +51,6 @@ interface Data {
 
 interface CommonItem<SpeciesT> {
   megaEvolves?: SpeciesT;
-  weather?: WeatherName;
 }
 
 interface JSONItem extends Nullable<JSONData & CommonItem<ID>> {}
@@ -60,7 +70,7 @@ class Items {
 // ---------- moves.ts ----------
 
 interface CommonMove<MoveT> extends DeepReadonly<{
-  basePower: number;
+  basePower?: number;
   pp: number;
   noMetronome: MoveT[];
 }> {}
