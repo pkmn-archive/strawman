@@ -76,7 +76,7 @@ class GenerationImpl implements Generation {
 
 class Generations {
   // not the correct signature, but for this example with one gen, no mods or langs and no loading its sufficient
-  static get(): Generation {
+  static get(): Promise<Generation> {
     // FIXME: generations API needs items/species APIs, but species/items APIs needs generations API to resolve references 
   }
 }
