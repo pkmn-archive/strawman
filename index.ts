@@ -67,17 +67,17 @@ class GenerationImpl implements Generation {
   items: Items;
   species: SpeciesSummaries;
 
-  constructor(num: GenerationNumber, items: Items, species: SpeciesSummaries) {
+  constructor(num: GenerationNumber) {
     this.num = num;
-    this.items = items;
-    this.species = species;
+    this.items = new Items(this);
+    this.species = new SpeciesSummaries(this);
   }
 }
 
 class Generations {
   // not the correct signature, but for this example with one gen, no mods or langs and no loading its sufficient
-  static get(): Promise<Generation> {
-    // FIXME: generations API needs items/species APIs, but species/items APIs needs generations API to resolve references 
+  static async get(): Promise<Generation> {
+    return new GenerationImpl(7);
   }
 }
 // NB: obviously would use caching etc
