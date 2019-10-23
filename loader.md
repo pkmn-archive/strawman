@@ -1,5 +1,5 @@
 **Goal:** make it easier to get sliced description/species details data (no
-secondary APIs).
+secondary APIs).  
 **Idea:** add additional params to Generations entry point:
 
 ```ts
@@ -23,7 +23,7 @@ const gen2 = Generations.get(7, {lang: 'fr'});
 Here, `gen2` will only fetch the `text/fr.json` file for Gen 7 (and it won't
 perform any fetches whatsoever if it knows a language doesnt exist).
 
-For descriptions: ad `desc` and `shortDesc` string fields to `GameObject`, BUT
+For descriptions: add `desc` and `shortDesc` string fields to `GameObject`, BUT
 only fetch descriptions if `lang` is not `''`. For applications which have no
 need for descriptions there will be no overhead over the wire and minimal 
 memory overhead for having the fields set to `''`, which seems like a good
@@ -60,5 +60,5 @@ up the descriptions in the `Generation.descriptions` (or similar).
 
 Switching to `{details: true}` is more problematic, though we can take advantage
 of the fact that it only modifies one portion of what `Generation` provides (the
-`Species` API`), and as such we can copy over all of the other APIs to the new
+`Species` API), and as such we can copy over all of the other APIs to the new
 `Generation` object and only replace the `Species` API.
