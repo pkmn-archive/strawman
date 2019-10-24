@@ -1,0 +1,89 @@
+[
+  {
+    "data": {
+      "types": ["moves", "species", "details", "types"],
+      "languages": ["en"]
+    },
+    "mods": {
+      "Stadium": {
+        "data": {
+          "types": ["moves"]
+        }
+      }
+    }
+  },
+  {
+    "data": {
+      "types": ["items", "moves", "species", "details", "types"],
+      "languages": ["en"]
+    }
+  },
+  {
+    "data": {
+      "types": ["items", "moves", "species", "details", "types"],
+      "languages": ["en"]
+    }
+  },
+  {
+    "data": {
+      "types": ["abilities", "items", "moves", "species", "details"],
+      "languages": ["en"]
+    }
+  },
+  {
+    "data": {
+      "types": ["abilities", "items", "moves", "species", "details", "types"],
+      "languages": ["en"]
+    }
+  },
+  {
+    "data": {
+      "types": ["abilities", "items", "moves", "species", "details", "types"],
+      "languages": ["en"]
+    }
+  },
+  {
+    "data": {
+      "types": ["abilities", "items", "moves", "species", "details", "types"],
+      "languages": ["en", "fr"]
+    },
+    "mods": {
+      "CAP": {
+        "data": {
+          "types": ["moves", "items", "species"]
+        }
+      },
+      "LGPE": {
+        "data": {
+          "types": ["moves", "species", "details"]
+        }
+      },
+      "SSB": {
+        "data": {
+          "types": ["abilities", "items", "moves", "species"]
+        }
+      },
+      "Next": {
+        "data": {
+          "types": ["abilities", "items", "moves", "species", "details", "types"],
+          "languages": ["en", "ru"]
+        }
+      },
+      "PiC": {
+        "data": {
+          "types": ["moves"]
+        }
+      },
+      "Mix and Mega": {
+        "data": {
+          "types": ["items"]
+        }
+      },
+      "VGC 17": {
+        "data": {
+          "types": ["items", "species", "details"]
+        }
+      }
+    }
+  }
+]
